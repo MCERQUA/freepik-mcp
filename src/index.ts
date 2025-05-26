@@ -34,13 +34,8 @@ class FreepikServer {
       },
       {
         capabilities: {
-          tools: {
-            search_resources: true,
-            get_resource: true,
-            download_resource: true,
-            generate_image: true,
-            check_status: true
-          },
+          tools: {},
+          resources: {},
         },
       }
     );
@@ -58,7 +53,7 @@ class FreepikServer {
   }
 
   private setupToolHandlers() {
-    // List available tools
+    // List available tools - This is the key method for inspection
     this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: [
         {
@@ -73,18 +68,23 @@ class FreepikServer {
               },
               limit: {
                 type: 'number',
-                description: 'Limit results per page'
+                description: 'Limit results per page (default: 20, max: 200)',
+                default: 20,
+                maximum: 200
               },
               order: {
                 type: 'string',
                 enum: ['relevance', 'recent'],
-                description: 'Sort order'
+                description: 'Sort order',
+                default: 'relevance'
               },
               filters: {
                 type: 'object',
+                description: 'Optional filters to apply to search results',
                 properties: {
                   orientation: {
                     type: 'object',
+                    description: 'Filter by image orientation',
                     properties: {
                       landscape: { type: 'boolean', description: 'Include landscape orientation' },
                       portrait: { type: 'boolean', description: 'Include portrait orientation' },
@@ -94,6 +94,7 @@ class FreepikServer {
                   },
                   content_type: {
                     type: 'object',
+                    description: 'Filter by content type',
                     properties: {
                       photo: { type: 'boolean', description: 'Include photos' },
                       psd: { type: 'boolean', description: 'Include PSDs' },
@@ -102,6 +103,7 @@ class FreepikServer {
                   },
                   license: {
                     type: 'object',
+                    description: 'Filter by license type',
                     properties: {
                       freemium: { type: 'boolean', description: 'Include freemium resources' },
                       premium: { type: 'boolean', description: 'Include premium resources' }
@@ -109,12 +111,13 @@ class FreepikServer {
                   }
                 }
               }
-            }
+            },
+            required: ['term']
           }
         },
         {
           name: 'get_resource',
-          description: 'Get detailed information about a specific resource',
+          description: 'Get detailed information about a specific Freepik resource',
           inputSchema: {
             type: 'object',
             properties: {
@@ -128,7 +131,7 @@ class FreepikServer {
         },
         {
           name: 'download_resource',
-          description: 'Get download URL for a specific resource',
+          description: 'Get download URL for a specific Freepik resource',
           inputSchema: {
             type: 'object',
             properties: {
@@ -142,7 +145,7 @@ class FreepikServer {
         },
         {
           name: 'generate_image',
-          description: 'Generate an image using Freepik Mystic AI',
+          description: 'Generate an AI image using Freepik Mystic (requires Freepik Premium)',
           inputSchema: {
             type: 'object',
             properties: {
@@ -153,27 +156,32 @@ class FreepikServer {
               resolution: {
                 type: 'string',
                 enum: ['2k', '4k'],
-                description: 'Image resolution'
+                description: 'Image resolution',
+                default: '2k'
               },
               aspect_ratio: {
                 type: 'string',
                 enum: ['square_1_1', 'classic_4_3', 'traditional_3_4', 'widescreen_16_9', 'social_story_9_16'],
-                description: 'Image aspect ratio'
+                description: 'Image aspect ratio',
+                default: 'square_1_1'
               },
               realism: {
                 type: 'boolean',
-                description: 'Enable realistic style'
+                description: 'Enable realistic style',
+                default: false
               },
               engine: {
                 type: 'string',
                 enum: ['automatic', 'magnific_illusio', 'magnific_sharpy', 'magnific_sparkle'],
-                description: 'AI engine to use'
+                description: 'AI engine to use',
+                default: 'automatic'
               },
               creative_detailing: {
                 type: 'number',
                 minimum: 0,
                 maximum: 100,
-                description: 'Level of creative detail'
+                description: 'Level of creative detail (0-100)',
+                default: 50
               }
             },
             required: ['prompt']
@@ -181,7 +189,7 @@ class FreepikServer {
         },
         {
           name: 'check_status',
-          description: 'Check the status of a Mystic image generation task',
+          description: 'Check the status of a Freepik Mystic image generation task',
           inputSchema: {
             type: 'object',
             properties: {
